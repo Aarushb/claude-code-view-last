@@ -3,7 +3,7 @@
   "displayName": "View Last Response",
   "version": "0.1.0",
   "description": "/view opens Claude's last response in your editor, in a separate window, so you can read it any time",
-  "author": { "name": "aarushb", "url": "https://github.com/Aarushb" },
+  "author": { "name": "Aarush Bhat", "url": "https://github.com/Aarushb" },
   "homepage": "https://github.com/Aarushb/claude-code-view-last#readme",
   "repository": "https://github.com/Aarushb/claude-code-view-last",
   "license": "MIT",

@@ -1,7 +1,7 @@
 {
   "name": "aarushb-mods",
-  "description": "Mods for Claude Code by aarushb",
-  "owner": { "name": "aarushb", "url": "https://github.com/Aarushb" },
+  "description": "Mods for Claude Code by Aarush Bhat",
+  "owner": { "name": "Aarush Bhat", "url": "https://github.com/Aarushb" },
   "plugins": [
     {
       "name": "view-last",
