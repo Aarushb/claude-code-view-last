@@ -13,13 +13,16 @@ const DEFAULT_NAME: Record<Platform, string> = {
 
 // No shell: the argument list is run as is. On Windows `start` returns at
 // once, so the editor window outlives the call.
-function launchArgv(platform: Platform, path: string): string[] {
-  if (platform === 'windows') return ['cmd', '/c', 'start', '', 'notepad', path]
-  if (platform === 'mac') return ['open', '-t', path]
-  return ['xdg-open', path]
+function launchArgv(platform: Platform, editor: string, path: string): string[] {
+  if (platform === 'windows') return ['cmd', '/c', 'start', '', editor || 'notepad', path]
+  if (platform === 'mac') return editor ? ['open', '-a', editor, path] : ['open', '-t', path]
+  return [editor || 'xdg-open', path]
 }
 
-export const register: Register = on => {
+export const register: Register = (on, options) => {
+  // The `editor` userConfig option; empty means the platform default.
+  const editor = typeof options?.editor === 'string' ? options.editor.trim() : ''
+
   on('session.start', async ($, e, next) => {
     // Register last: a taken name throws and would skip the rest of this hook.
     await $.command.register({
@@ -52,12 +55,12 @@ export const register: Register = on => {
     const path = `${dir.replace(/[\\/]+$/, '')}${sep}${FILE_NAME}`
     await $.fs.write(path, reply.text)
 
-    const name = DEFAULT_NAME[platform]
+    const name = editor || DEFAULT_NAME[platform]
     $.ui.toast(`Opening Claude's last response in ${name}. Close it when you're done.`, {
       timeoutMs: 6000,
     })
 
-    const ran = await $.process.run(launchArgv(platform, path))
+    const ran = await $.process.run(launchArgv(platform, editor, path))
     if (ran.exitCode !== 0) {
       return { text: `view-last: could not open ${name} (${ran.stderr.trim()}). Saved to ${path}` }
     }

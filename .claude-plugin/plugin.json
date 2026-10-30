@@ -1,5 +1,12 @@
 {
   "name": "view-last",
   "version": "0.1.0",
-  "description": "/view opens Claude's last response in your editor, in a separate window, so you can read it any time"
+  "description": "/view opens Claude's last response in your editor, in a separate window, so you can read it any time",
+  "userConfig": {
+    "editor": {
+      "type": "string",
+      "title": "Editor",
+      "description": "Program that opens the reply, such as notepad, code, or subl. Leave empty to use the platform default (Notepad on Windows, the default text editor on macOS, xdg-open on Linux). Use a program that opens its own window: a terminal editor such as vim has no terminal to run in."
+    }
+  }
 }
