@@ -22,6 +22,32 @@ By default `/view` opens Notepad on Windows, the default text editor on macOS (`
 
 Pick a program that opens its own window. A terminal editor such as `vim` has no terminal to run in.
 
+## Hotkeys
+
+A plugin can't ship keybindings, so add your own. Run `/keybindings` (or edit `~/.claude/keybindings.json`) and bind a key to the `command:` action. For example, `Alt+G` for `/view` and `Alt+C` for the built-in `/copy`:
+
+```json
+{
+  "bindings": [
+    {
+      "context": "Chat",
+      "bindings": {
+        "meta+g": "command:view",
+        "meta+c": "command:copy"
+      }
+    }
+  ]
+}
+```
+
+`meta` is the Alt key on Windows and Linux and Option on macOS (which needs Option set as Meta in the terminal). The file reloads on its own.
+
+Notes on choosing a key:
+
+- `Ctrl+G` is taken: it opens your prompt in the editor.
+- `Ctrl+Shift+G` only works in terminals that can tell it apart from `Ctrl+G` (those that implement the kitty keyboard protocol). The classic Windows console cannot. If it opens the prompt editor instead, use `Alt+G`.
+- `Ctrl+B`, `Ctrl+T` and `Alt+V` (Windows) are already bound by Claude Code.
+
 ## Install
 
 Requires Claude Code v2.1.287 or later (mods are on by default from that version).
