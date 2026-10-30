@@ -21,3 +21,55 @@ Long replies are awkward to read in the terminal, especially with a screen reade
 By default `/view` opens Notepad on Windows, the default text editor on macOS (`open -t`), and your default app on Linux (`xdg-open`). To use something else, set the **Editor** option for the plugin in `/plugin` (or `/config`), for example `code` or `subl`.
 
 Pick a program that opens its own window. A terminal editor such as `vim` has no terminal to run in.
+
+## Install
+
+Requires Claude Code v2.1.287 or later (mods are on by default from that version).
+
+### From Claude Code
+
+At the prompt of a terminal session:
+
+```
+/plugin install view-last --marketplace Aarushb/claude-code-view-last
+```
+
+Answer `y` to add the marketplace, then pick a scope (user scope loads it in every session). From a shell instead:
+
+```
+claude plugin install view-last --marketplace Aarushb/claude-code-view-last
+```
+
+While the repository is private, the install only works for people who can read it on GitHub and whose machine already holds a git credential for github.com (an SSH key, or `gh auth login` then `gh auth setup-git`).
+
+### Manually
+
+Clone the repository, then use either route.
+
+```
+git clone https://github.com/Aarushb/claude-code-view-last.git
+```
+
+**For one session**, point Claude Code at the folder:
+
+```
+claude --plugin-dir ./claude-code-view-last
+```
+
+**Permanently**, add the clone as a local marketplace and install from it:
+
+```
+claude plugin marketplace add ./claude-code-view-last
+claude plugin install view-last@aarushb-mods
+```
+
+Editing the clone and running `/reload-plugins` picks up changes with no reinstall.
+
+To check it loaded, run `/plugin`; a dim line under the tabs reads `1 mod active · view-last`. Then type `/view`.
+
+## Update and uninstall
+
+```
+claude plugin update view-last
+claude plugin uninstall view-last
+```
