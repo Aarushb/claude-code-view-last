@@ -1,0 +1,12 @@
+{
+  "name": "aarushb-mods",
+  "description": "Mods for Claude Code by aarushb",
+  "owner": { "name": "aarushb", "url": "https://github.com/Aarushb" },
+  "plugins": [
+    {
+      "name": "view-last",
+      "source": "./",
+      "description": "/view opens Claude's last response in your editor, in a separate window, so you can read it any time"
+    }
+  ]
+}
