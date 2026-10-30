@@ -25,7 +25,8 @@ export const register: Register = on => {
     if (reply === undefined) return { text: 'view-last: no response to open yet.' }
 
     const dir = (await $.env.get('TEMP')) ?? (await $.env.get('TMPDIR')) ?? '/tmp'
-    const path = `${dir.replace(/[\\/]+$/, '')}/${FILE_NAME}`
+    const sep = dir.includes('\\') ? '\\' : '/'
+    const path = `${dir.replace(/[\\/]+$/, '')}${sep}${FILE_NAME}`
     await $.fs.write(path, reply.text)
 
     // `start` returns at once, so the editor outlives this call.
