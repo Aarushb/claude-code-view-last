@@ -31,6 +31,24 @@ test('/view writes the last reply to a temp file and opens it in notepad', async
   expect(out.text ?? '').toBe('')
 })
 
+test('/view tells the person what is opening and how to get back', async ($, on) => {
+  const toasts: string[] = []
+  on('session.messages', () => ({ value: [msg('assistant', 'hello')] }))
+  on('env.get', () => ({ value: 'C:\\Temp' }))
+  on('fs.write', () => ({ value: {} }))
+  on('process.run', () => ({ value: { exitCode: 0, stdout: '', stderr: '' } }))
+  on('ui.toast', (_, e) => {
+    toasts.push(e.text)
+    return { value: {} }
+  })
+
+  await $.command.run({ command: 'view', args: '' })
+
+  expect(toasts).toHaveLength(1)
+  expect(toasts[0]).toMatch(/last response/i)
+  expect(toasts[0]).toMatch(/close notepad/i)
+})
+
 test('/view 2 opens the second-latest reply and skips tool-only turns', async ($, on) => {
   const written: string[] = []
   on('session.messages', () => ({
