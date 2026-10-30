@@ -29,6 +29,10 @@ export const register: Register = on => {
     const path = `${dir.replace(/[\\/]+$/, '')}${sep}${FILE_NAME}`
     await $.fs.write(path, reply.text)
 
+    $.ui.toast(`Opening Claude's last response in ${EDITOR}. Close ${EDITOR} when you're done.`, {
+      timeoutMs: 6000,
+    })
+
     // `start` returns at once, so the editor outlives this call.
     const ran = await $.process.run(['cmd', '/c', 'start', '', EDITOR, path])
     if (ran.exitCode !== 0) {
