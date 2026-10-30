@@ -1,0 +1,15 @@
+# Written by Claude Code when it loads the mod (editor types)
+.claude-plugin/types/
+
+# Dependencies and logs
+node_modules/
+*.log
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+.vscode/
+.idea/
