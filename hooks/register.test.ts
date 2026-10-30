@@ -1,24 +1,46 @@
 import { expect, test } from 'claude-code/testing'
 
-const msg = (role: 'user' | 'assistant', text: string) => ({ role, text, toolUses: [] })
+type Message = { role: 'user' | 'assistant'; text: string; toolUses: never[] }
 
-test('/view writes the last reply to a temp file and opens it in notepad', async ($, on) => {
+const msg = (role: Message['role'], text: string): Message => ({ role, text, toolUses: [] })
+
+const CHAT = [msg('user', 'hi'), msg('assistant', 'first'), msg('user', 'again'), msg('assistant', 'second')]
+
+const WINDOWS: Record<string, string> = { OS: 'Windows_NT', TEMP: 'C:\\Temp' }
+const POSIX: Record<string, string> = { TMPDIR: '/var/tmp/' }
+
+// Stubs every call /view makes, recording the files written and commands run.
+function stubEngine(
+  on: (event: string, hook: (...args: any[]) => unknown) => unknown,
+  env: Record<string, string>,
+  { uname = 'Linux', messages = CHAT }: { uname?: string; messages?: Message[] } = {},
+) {
   const written: { path: string; text: string }[] = []
   const launched: string[][] = []
-  on('command.register', () => ({ value: { command: 'view' } }))
-  on('session.start', (_, e) => ({ cwd: e.cwd }))
-  on('session.messages', () => ({
-    value: [msg('user', 'hi'), msg('assistant', 'first'), msg('user', 'again'), msg('assistant', 'second')],
-  }))
-  on('env.get', (_, e) => ({ value: e.name === 'TEMP' ? 'C:\\Temp' : undefined }))
-  on('fs.write', (_, e) => {
+  const toasts: string[] = []
+  on('session.messages', () => ({ value: messages }))
+  on('env.get', (_: unknown, e: { name: string }) => ({ value: env[e.name] }))
+  on('fs.write', (_: unknown, e: { path: string; text: string }) => {
     written.push({ path: e.path, text: e.text })
     return { value: {} }
   })
-  on('process.run', (_, e) => {
-    launched.push([...e.argv])
+  on('process.run', (_: unknown, e: { argv: readonly string[] }) => {
+    const argv = [...e.argv]
+    if (argv[0] === 'uname') return { value: { exitCode: 0, stdout: uname + '\n', stderr: '' } }
+    launched.push(argv)
     return { value: { exitCode: 0, stdout: '', stderr: '' } }
   })
+  on('ui.toast', (_: unknown, e: { text: string }) => {
+    toasts.push(e.text)
+    return { value: {} }
+  })
+  return { written, launched, toasts }
+}
+
+test('/view writes the last reply to a temp file and opens it in notepad', async ($, on) => {
+  on('command.register', () => ({ value: { command: 'view' } }))
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+  const { written, launched } = stubEngine(on, WINDOWS)
 
   await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
   const out = await $.command.run({ command: 'view', args: '' })
@@ -32,50 +54,54 @@ test('/view writes the last reply to a temp file and opens it in notepad', async
 })
 
 test('/view tells the person what is opening and how to get back', async ($, on) => {
-  const toasts: string[] = []
-  on('session.messages', () => ({ value: [msg('assistant', 'hello')] }))
-  on('env.get', () => ({ value: 'C:\\Temp' }))
-  on('fs.write', () => ({ value: {} }))
-  on('process.run', () => ({ value: { exitCode: 0, stdout: '', stderr: '' } }))
-  on('ui.toast', (_, e) => {
-    toasts.push(e.text)
-    return { value: {} }
-  })
+  const { toasts } = stubEngine(on, WINDOWS)
 
   await $.command.run({ command: 'view', args: '' })
 
   expect(toasts).toHaveLength(1)
   expect(toasts[0]).toMatch(/last response/i)
-  expect(toasts[0]).toMatch(/close notepad/i)
+  expect(toasts[0]).toMatch(/close it/i)
 })
 
-test('/view 2 opens the second-latest reply and skips tool-only turns', async ($, on) => {
-  const written: string[] = []
-  on('session.messages', () => ({
-    value: [msg('assistant', 'older'), msg('assistant', 'newer'), msg('assistant', '')],
-  }))
-  on('env.get', () => ({ value: 'C:\\Temp' }))
-  on('fs.write', (_, e) => {
-    written.push(e.text)
-    return { value: {} }
-  })
-  on('process.run', () => ({ value: { exitCode: 0, stdout: '', stderr: '' } }))
+test('/view 2 opens the second-latest reply', async ($, on) => {
+  const { written } = stubEngine(on, WINDOWS)
 
   await $.command.run({ command: 'view', args: '2' })
 
-  expect(written).toEqual(['older'])
+  expect(written.map(w => w.text)).toEqual(['first'])
+})
+
+test('/view skips turns that only called tools', async ($, on) => {
+  const { written } = stubEngine(on, WINDOWS, {
+    messages: [msg('assistant', 'answer'), msg('assistant', '')],
+  })
+
+  await $.command.run({ command: 'view', args: '' })
+
+  expect(written.map(w => w.text)).toEqual(['answer'])
 })
 
 test('/view with no reply says so and opens nothing', async ($, on) => {
-  let launched = 0
-  on('session.messages', () => ({ value: [msg('user', 'hi')] }))
-  on('process.run', () => {
-    launched += 1
-    return { value: { exitCode: 0, stdout: '', stderr: '' } }
-  })
+  const { launched } = stubEngine(on, WINDOWS, { messages: [msg('user', 'hi')] })
 
   const out = await $.command.run({ command: 'view', args: '' })
 
   expect(out.text).toMatch(/no response/)
-  expect(launched).toBe(0)
+  expect(launched).toEqual([])
+})
+
+test('/view on macOS opens the file in the default text editor', async ($, on) => {
+  const { launched } = stubEngine(on, POSIX, { uname: 'Darwin' })
+
+  await $.command.run({ command: 'view', args: '' })
+
+  expect(launched).toEqual([['open', '-t', '/var/tmp/claude-last-response.txt']])
+})
+
+test('/view on Linux opens the file with xdg-open', async ($, on) => {
+  const { launched } = stubEngine(on, POSIX, { uname: 'Linux' })
+
+  await $.command.run({ command: 'view', args: '' })
+
+  expect(launched).toEqual([['xdg-open', '/var/tmp/claude-last-response.txt']])
 })
