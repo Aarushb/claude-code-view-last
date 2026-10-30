@@ -62,8 +62,6 @@ Answer `y` to add the marketplace, then pick a scope (user scope loads it in eve
 claude plugin install view-last --marketplace Aarushb/claude-code-view-last
 ```
 
-While the repository is private, the install only works for people who can read it on GitHub and whose machine already holds a git credential for github.com (an SSH key, or `gh auth login` then `gh auth setup-git`).
-
 ### Manually
 
 Clone the repository, then use either route.
