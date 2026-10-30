@@ -99,3 +99,17 @@ To check it loaded, run `/plugin`; a dim line under the tabs reads `1 mod active
 claude plugin update view-last
 claude plugin uninstall view-last
 ```
+
+## Development
+
+```
+claude plugin validate .      # what the mod hooks and calls
+claude plugin test .          # unit tests, no session and no model calls
+claude --plugin-dir .         # load it live; saving a file reloads it
+```
+
+The tests stub every engine call, so they run without a Claude session and cost nothing. The code is one hooks module, `hooks/register.ts`.
+
+## License
+
+[MIT](LICENSE)
