@@ -2,7 +2,7 @@
 
 A [Claude Code](https://code.claude.com) mod that opens Claude's last response in a separate editor window with one command, so you can read, scroll and search it at your own pace and then close it.
 
-Long replies are awkward to read in the terminal, especially with a screen reader or object navigation. `Ctrl+G` already opens your editor, but it is an edit-and-send flow for your prompt. `/view` is read-only by intent: it writes the reply to a temp file, opens it, and gets out of the way. Closing the window sends nothing back to Claude.
+Long replies are awkward to read in the terminal, especially with a screen reader. Object navigation helps; but is not enough in my experience. `Ctrl+G` already opens your editor, but it is an edit-and-send flow for your prompt. `/view` is read-only by intent: it writes the reply to a temp file, opens it, and gets out of the way. Closing the window sends nothing back to Claude.
 
 ## Usage
 
@@ -42,11 +42,7 @@ A plugin can't ship keybindings, so add your own. Run `/keybindings` (or edit `~
 
 `meta` is the Alt key on Windows and Linux and Option on macOS (which needs Option set as Meta in the terminal). The file reloads on its own.
 
-Notes on choosing a key:
-
-- `Ctrl+G` is taken: it opens your prompt in the editor.
-- `Ctrl+Shift+G` only works in terminals that can tell it apart from `Ctrl+G` (those that implement the kitty keyboard protocol). The classic Windows console cannot. If it opens the prompt editor instead, use `Alt+G`.
-- `Ctrl+B`, `Ctrl+T` and `Alt+V` (Windows) are already bound by Claude Code.
+I wanted to use `Ctrl+Shift+G`, it seemed intuitive given `Ctrl+G`. However, that only works in terminals that can tell it apart from `Ctrl+G` (those that implement the kitty keyboard protocol). The classic Windows console cannot. I personally use `Alt+G`.
 
 ## Install
 
