@@ -1,0 +1,5 @@
+{
+  "name": "view-last",
+  "version": "0.1.0",
+  "description": "/view opens Claude's last response in your editor, in a separate window, so you can read it any time"
+}
