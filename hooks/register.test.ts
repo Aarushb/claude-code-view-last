@@ -105,3 +105,28 @@ test('/view on Linux opens the file with xdg-open', async ($, on) => {
 
   expect(launched).toEqual([['xdg-open', '/var/tmp/claude-last-response.txt']])
 })
+
+test('the editor option replaces Notepad on Windows', { options: { editor: 'code' } }, async ($, on) => {
+  const { written, launched, toasts } = stubEngine(on, WINDOWS)
+
+  await $.command.run({ command: 'view', args: '' })
+
+  expect(launched).toEqual([['cmd', '/c', 'start', '', 'code', written[0].path]])
+  expect(toasts[0]).toMatch(/in code\./)
+})
+
+test('the editor option is passed to open -a on macOS', { options: { editor: 'Sublime Text' } }, async ($, on) => {
+  const { launched } = stubEngine(on, POSIX, { uname: 'Darwin' })
+
+  await $.command.run({ command: 'view', args: '' })
+
+  expect(launched).toEqual([['open', '-a', 'Sublime Text', '/var/tmp/claude-last-response.txt']])
+})
+
+test('the editor option replaces xdg-open on Linux', { options: { editor: 'gedit' } }, async ($, on) => {
+  const { launched } = stubEngine(on, POSIX, { uname: 'Linux' })
+
+  await $.command.run({ command: 'view', args: '' })
+
+  expect(launched).toEqual([['gedit', '/var/tmp/claude-last-response.txt']])
+})
