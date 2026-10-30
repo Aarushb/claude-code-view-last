@@ -1,14 +1,30 @@
 import type { Register } from 'claude-code'
 
-const EDITOR = 'notepad'
 const FILE_NAME = 'claude-last-response.txt'
+
+type Platform = 'windows' | 'mac' | 'linux'
+
+// What the person is told is opening, per platform.
+const DEFAULT_NAME: Record<Platform, string> = {
+  windows: 'Notepad',
+  mac: 'your text editor',
+  linux: 'your default app',
+}
+
+// No shell: the argument list is run as is. On Windows `start` returns at
+// once, so the editor window outlives the call.
+function launchArgv(platform: Platform, path: string): string[] {
+  if (platform === 'windows') return ['cmd', '/c', 'start', '', 'notepad', path]
+  if (platform === 'mac') return ['open', '-t', path]
+  return ['xdg-open', path]
+}
 
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     // Register last: a taken name throws and would skip the rest of this hook.
     await $.command.register({
       name: 'view',
-      description: "Open Claude's last response in Notepad",
+      description: "Open Claude's last response in a separate window",
       argumentHint: '[N]',
       immediate: true,
     })
@@ -24,19 +40,26 @@ export const register: Register = on => {
     const reply = replies.at(-n)
     if (reply === undefined) return { text: 'view-last: no response to open yet.' }
 
+    const isWindows = (await $.env.get('OS')) === 'Windows_NT'
+    let platform: Platform = 'windows'
+    if (!isWindows) {
+      const uname = await $.process.run(['uname', '-s'])
+      platform = uname.stdout.trim() === 'Darwin' ? 'mac' : 'linux'
+    }
+
     const dir = (await $.env.get('TEMP')) ?? (await $.env.get('TMPDIR')) ?? '/tmp'
     const sep = dir.includes('\\') ? '\\' : '/'
     const path = `${dir.replace(/[\\/]+$/, '')}${sep}${FILE_NAME}`
     await $.fs.write(path, reply.text)
 
-    $.ui.toast(`Opening Claude's last response in ${EDITOR}. Close ${EDITOR} when you're done.`, {
+    const name = DEFAULT_NAME[platform]
+    $.ui.toast(`Opening Claude's last response in ${name}. Close it when you're done.`, {
       timeoutMs: 6000,
     })
 
-    // `start` returns at once, so the editor outlives this call.
-    const ran = await $.process.run(['cmd', '/c', 'start', '', EDITOR, path])
+    const ran = await $.process.run(launchArgv(platform, path))
     if (ran.exitCode !== 0) {
-      return { text: `view-last: could not start ${EDITOR} (${ran.stderr.trim()}). Saved to ${path}` }
+      return { text: `view-last: could not open ${name} (${ran.stderr.trim()}). Saved to ${path}` }
     }
     return {}
   })
