@@ -130,3 +130,68 @@ test('the editor option replaces xdg-open on Linux', { options: { editor: 'gedit
 
   expect(launched).toEqual([['gedit', '/var/tmp/claude-last-response.txt']])
 })
+
+const THREE = [
+  msg('assistant', 'one'),
+  msg('user', 'q'),
+  msg('assistant', 'two'),
+  msg('user', 'q'),
+  msg('assistant', 'three'),
+]
+
+test('/view 1-2 opens a range, oldest first, each reply labelled', async ($, on) => {
+  const { written } = stubEngine(on, WINDOWS, { messages: THREE })
+
+  await $.command.run({ command: 'view', args: '1-2' })
+
+  expect(written[0].text).toBe('===== Reply 2 =====\n\ntwo\n\n===== Reply 1 =====\n\nthree')
+})
+
+test('/view 3-2 is the same range as 2-3', async ($, on) => {
+  const { written } = stubEngine(on, WINDOWS, { messages: THREE })
+
+  await $.command.run({ command: 'view', args: '3-2' })
+
+  expect(written[0].text).toBe('===== Reply 3 =====\n\none\n\n===== Reply 2 =====\n\ntwo')
+})
+
+test('a range past the oldest reply is cut to what exists', async ($, on) => {
+  const { written } = stubEngine(on, WINDOWS, { messages: THREE })
+
+  await $.command.run({ command: 'view', args: '2-9' })
+
+  expect(written[0].text).toBe('===== Reply 3 =====\n\none\n\n===== Reply 2 =====\n\ntwo')
+})
+
+test('a range that starts past the oldest reply opens nothing', async ($, on) => {
+  const { launched } = stubEngine(on, WINDOWS, { messages: THREE })
+
+  const out = await $.command.run({ command: 'view', args: '7-9' })
+
+  expect(out.text).toMatch(/no response/)
+  expect(launched).toEqual([])
+})
+
+test('the count option sets how many replies a bare /view opens', { options: { count: 2 } }, async ($, on) => {
+  const { written } = stubEngine(on, WINDOWS, { messages: THREE })
+
+  await $.command.run({ command: 'view', args: '' })
+
+  expect(written[0].text).toBe('===== Reply 2 =====\n\ntwo\n\n===== Reply 1 =====\n\nthree')
+})
+
+test('a number given to /view overrides the count option', { options: { count: 3 } }, async ($, on) => {
+  const { written } = stubEngine(on, WINDOWS, { messages: THREE })
+
+  await $.command.run({ command: 'view', args: '2' })
+
+  expect(written[0].text).toBe('two')
+})
+
+test('the order option puts the latest reply first', { options: { order: 'newest-first' } }, async ($, on) => {
+  const { written } = stubEngine(on, WINDOWS, { messages: THREE })
+
+  await $.command.run({ command: 'view', args: '1-2' })
+
+  expect(written[0].text).toBe('===== Reply 1 =====\n\nthree\n\n===== Reply 2 =====\n\ntwo')
+})
