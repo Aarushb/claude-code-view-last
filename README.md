@@ -10,17 +10,27 @@ Long replies are awkward to read in the terminal, especially with a screen reade
 | --- | --- |
 | `/view` | Open Claude's latest reply |
 | `/view 2` | Open the second-latest reply (`/view N` for the Nth) |
+| `/view 1-5` | Open the latest five replies in one window (`/view A-B` for any range) |
+
+Replies are counted from the bottom, the same way `/copy N` counts: 1 is the latest. A range is read oldest to newest by default, so the latest reply is at the bottom. Each reply in a range starts with a `===== Reply N =====` line, where N is the number you would give `/view` to open it alone.
 
 - Replies that only called tools (no text) are skipped.
+- A range that runs past the oldest reply opens what exists.
 - It works while Claude is still working on a turn.
 - A short tip appears first, saying what is opening and that you can simply close it.
 - The reply is written to `claude-last-response.txt` in your temp folder (`%TEMP%` on Windows, `$TMPDIR` or `/tmp` elsewhere). It is overwritten on each use.
 
-## Editor
+## Options
 
-By default `/view` opens Notepad on Windows, the default text editor on macOS (`open -t`), and your default app on Linux (`xdg-open`). To use something else, set the **Editor** option for the plugin in `/plugin` (or `/config`), for example `code` or `subl`.
+Set these for the plugin in `/plugin` (or `/config`).
 
-Pick a program that opens its own window. A terminal editor such as `vim` has no terminal to run in.
+| Option | Default | What it does |
+| --- | --- | --- |
+| **Editor** | empty | Program that opens the reply, for example `code` or `subl`. Empty means Notepad on Windows, the default text editor on macOS (`open -t`), and your default app on Linux (`xdg-open`). |
+| **Default count** | `1` | How many replies `/view` and its hotkey open when you give no number. A number you type always wins. |
+| **Order** | `oldest-first` | `oldest-first` puts the latest reply at the bottom; `newest-first` puts it at the top. Only matters when several replies are opened. |
+
+Pick an editor that opens its own window. A terminal editor such as `vim` has no terminal to run in.
 
 ## Hotkeys
 
