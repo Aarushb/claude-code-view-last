@@ -1,7 +1,7 @@
 {
   "name": "view-last",
   "displayName": "View Last Response",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "/view opens Claude's last response in your editor, in a separate window, so you can read it any time",
   "author": { "name": "Aarush Bhat", "url": "https://github.com/Aarushb" },
   "homepage": "https://github.com/Aarushb/claude-code-view-last#readme",
@@ -13,6 +13,20 @@
       "type": "string",
       "title": "Editor",
       "description": "Program that opens the reply, such as notepad, code, or subl. Leave empty to use the platform default (Notepad on Windows, the default text editor on macOS, xdg-open on Linux). Use a program that opens its own window: a terminal editor such as vim has no terminal to run in."
+    },
+    "count": {
+      "type": "number",
+      "title": "Default count",
+      "description": "How many replies /view and its hotkey open when you give no number. Defaults to 1 (the latest reply).",
+      "default": 1,
+      "min": 1
+    },
+    "order": {
+      "type": "string",
+      "title": "Order",
+      "description": "Order of replies when several are opened: oldest-first puts the latest reply at the bottom, newest-first puts it at the top.",
+      "options": ["oldest-first", "newest-first"],
+      "default": "oldest-first"
     }
   }
 }
