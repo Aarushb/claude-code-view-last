@@ -11,6 +11,7 @@ const DEFAULT_NAME: Record<Platform, string> = {
   linux: 'your default app',
 }
 
+// Builds the command that opens the file in the editor, per platform.
 // No shell: the argument list is run as is. On Windows `start` returns at
 // once, so the editor window outlives the call.
 function launchArgv(platform: Platform, editor: string, path: string): string[] {
@@ -19,8 +20,9 @@ function launchArgv(platform: Platform, editor: string, path: string): string[] 
   return [editor || 'xdg-open', path]
 }
 
-// Which replies to open, counted from the bottom: 1 is the latest.
-// "" is the default count, "N" is one reply, "A-B" is a range (either way round).
+// Turns the /view argument into the range of replies to open. Replies are
+// counted from the bottom, so 1 is the latest. "" is the default count, "N" is
+// one reply, "A-B" is a range (either way round).
 function parseSelection(args: string, defaultCount: number): { from: number; to: number } {
   const range = /^\s*(\d+)\s*-\s*(\d+)\s*$/.exec(args)
   if (range) {
@@ -33,6 +35,7 @@ function parseSelection(args: string, defaultCount: number): { from: number; to:
   return { from: 1, to: defaultCount }
 }
 
+// The mod's entry point: adds the /view command and reads the plugin options.
 export const register: Register = (on, options) => {
   // The `editor` userConfig option; empty means the platform default.
   const editor = typeof options?.editor === 'string' ? options.editor.trim() : ''
@@ -41,6 +44,7 @@ export const register: Register = (on, options) => {
   // The `order` option: oldest-first keeps the latest reply at the bottom.
   const newestFirst = options?.order === 'newest-first'
 
+  // Adds /view to the slash commands when a session starts.
   on('session.start', async ($, e, next) => {
     // Register last: a taken name throws and would skip the rest of this hook.
     await $.command.register({
@@ -52,6 +56,7 @@ export const register: Register = (on, options) => {
     return next(e)
   })
 
+  // Runs /view: writes the chosen replies to a temp file and opens it in the editor.
   on('command.run', { command: 'view' }, async ($, e) => {
     // /view N opens the Nth-latest response, as /copy N does; /view A-B a range.
     const { from, to } = parseSelection(e.args, count)

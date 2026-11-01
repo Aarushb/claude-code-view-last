@@ -1,9 +1,12 @@
+// Tests for /view. Every engine call is stubbed, so nothing opens a real window.
 import { expect, test } from 'claude-code/testing'
 
 type Message = { role: 'user' | 'assistant'; text: string; toolUses: never[] }
 
+// Builds a session message with no tool calls.
 const msg = (role: Message['role'], text: string): Message => ({ role, text, toolUses: [] })
 
+// A short chat with two replies, "first" then "second".
 const CHAT = [msg('user', 'hi'), msg('assistant', 'first'), msg('user', 'again'), msg('assistant', 'second')]
 
 const WINDOWS: Record<string, string> = { OS: 'Windows_NT', TEMP: 'C:\\Temp' }
@@ -131,6 +134,7 @@ test('the editor option replaces xdg-open on Linux', { options: { editor: 'gedit
   expect(launched).toEqual([['gedit', '/var/tmp/claude-last-response.txt']])
 })
 
+// A chat with three replies, "one" oldest to "three" latest, for the range tests.
 const THREE = [
   msg('assistant', 'one'),
   msg('user', 'q'),
