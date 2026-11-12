@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.1
+
+- The file is no longer deleted when you send a message or when the session ends, so an editor that has it open does not report a missing file. Running `/view` again overwrites the same file.
+- Files older than a day are still swept when a new session starts.
+
 ## 0.3.0
 
 - Each session writes its own temp file, so two sessions no longer overwrite each other.
