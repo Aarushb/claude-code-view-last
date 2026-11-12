@@ -22,8 +22,8 @@ Replies are counted from the bottom, the same way `/copy N` counts: 1 is the lat
 - A short tip appears first, saying what is opening and that you can simply close it.
 - The reply is written to `claude-response-<session id>.txt` in your temp folder (`%TEMP%` on Windows, `$TMPDIR` or `/tmp` elsewhere), similar to `Ctrl+G`.
 - Each session has its own file, so concurrent sessions never overwrite each other. Within a session the file is overwritten on each use.
-- The file is deleted when you send your next message and when the session ends (including exiting with Alt+F4, Command+Q, etc.). If a session ends without a clean exit, the next session start deletes any of these files older than a day.
-- Cleanup happens on send and on session end because the mod cannot tell when you close the editor window: many editors hand the file to a copy that is already running.
+- The file is not deleted while the session runs or when it ends, so an editor that has it open never loses it and you can reopen the last reply any time. Running `/view` again overwrites the file in place, so an editor that has it open may offer to reload it.
+- Each new session start deletes any of these files older than a day. Cleanup is by age because the mod cannot tell when you close the editor window: many editors hand the file to a copy that is already running.
 
 ## Options
 
