@@ -1,8 +1,21 @@
 import type { Register } from 'claude-code'
 
-const FILE_NAME = 'claude-last-response.txt'
+// Each session writes its own file, so two sessions never overwrite each other.
+const FILE_PREFIX = 'claude-response-'
+// The single shared file that versions before 0.3.0 wrote.
+const LEGACY_NAME = 'claude-last-response.txt'
+// A file this old is taken as abandoned and swept when a session starts.
+const MAX_AGE_MS = 24 * 60 * 60 * 1000
 
 type Platform = 'windows' | 'mac' | 'linux'
+
+// The part of the engine interface the file helpers use.
+type Host = {
+  env: { get(name: string): Promise<string | undefined> }
+  process: {
+    run(argv: readonly string[]): Promise<{ exitCode: number; stdout: string; stderr: string }>
+  }
+}
 
 // What the person is told is opening, per platform.
 const DEFAULT_NAME: Record<Platform, string> = {
@@ -18,6 +31,43 @@ function launchArgv(platform: Platform, editor: string, path: string): string[] 
   if (platform === 'windows') return ['cmd', '/c', 'start', '', editor || 'notepad', path]
   if (platform === 'mac') return editor ? ['open', '-a', editor, path] : ['open', '-t', path]
   return [editor || 'xdg-open', path]
+}
+
+// Works out which platform the session runs on.
+async function platformOf($: Host): Promise<Platform> {
+  if ((await $.env.get('OS')) === 'Windows_NT') return 'windows'
+  const uname = await $.process.run(['uname', '-s'])
+  return uname.stdout.trim() === 'Darwin' ? 'mac' : 'linux'
+}
+
+// Returns the temp folder, with no trailing separator.
+async function tempDir($: Host): Promise<string> {
+  const dir = (await $.env.get('TEMP')) ?? (await $.env.get('TMPDIR')) ?? '/tmp'
+  return dir.replace(/[\\/]+$/, '')
+}
+
+// Joins a name onto a folder using the folder's own separator, so a Windows
+// path never ends up with mixed slashes.
+function joinPath(dir: string, name: string): string {
+  return `${dir}${dir.includes('\\') ? '\\' : '/'}${name}`
+}
+
+// Returns the path of the file that holds one session's reply.
+async function sessionFile($: Host, sessionId: string): Promise<string> {
+  const safeId = sessionId.replace(/[^A-Za-z0-9_-]/g, '_')
+  return joinPath(await tempDir($), `${FILE_PREFIX}${safeId}.txt`)
+}
+
+// Deletes a file, and never throws: a file that is already gone is the goal.
+// There is no delete in the file API, so a command does it (no shell).
+async function removeFile($: Host, path: string): Promise<void> {
+  const argv =
+    (await platformOf($)) === 'windows' ? ['cmd', '/c', 'del', '/q', path] : ['rm', '-f', path]
+  try {
+    await $.process.run(argv)
+  } catch {
+    // Nothing to do: the file will be swept on a later session start.
+  }
 }
 
 // Turns the /view argument into the range of replies to open. Replies are
@@ -44,8 +94,23 @@ export const register: Register = (on, options) => {
   // The `order` option: oldest-first keeps the latest reply at the bottom.
   const newestFirst = options?.order === 'newest-first'
 
-  // Adds /view to the slash commands when a session starts.
+  // Sweeps abandoned files and adds /view to the slash commands when a session starts.
   on('session.start', async ($, e, next) => {
+    // Files from sessions that ended without a clean exit. The age limit keeps
+    // this from touching a file another open session may still be showing.
+    try {
+      const dir = await tempDir($)
+      for (const entry of await $.fs.list(dir)) {
+        const isOurs =
+          entry.name === LEGACY_NAME ||
+          (entry.name.startsWith(FILE_PREFIX) && entry.name.endsWith('.txt'))
+        if (isOurs && entry.kind === 'file' && Date.now() - entry.mtimeMs > MAX_AGE_MS) {
+          await removeFile($, joinPath(dir, entry.name))
+        }
+      }
+    } catch {
+      // A sweep that fails must not stop the command from registering.
+    }
     // Register last: a taken name throws and would skip the rest of this hook.
     await $.command.register({
       name: 'view',
@@ -53,6 +118,21 @@ export const register: Register = (on, options) => {
       argumentHint: '[N | A-B]',
       immediate: true,
     })
+    return next(e)
+  })
+
+  // Deletes this session's file when a message is sent. An editor window that
+  // is still open keeps its text, and /view writes the file again.
+  on('prompt.submit', async ($, e, next) => {
+    const path = await sessionFile($, await $.session.id())
+    if (await $.fs.exists(path)) await removeFile($, path)
+    return next(e)
+  })
+
+  // Deletes the ending session's file. The id comes from the event: after a
+  // /clear the process goes on under a new id.
+  on('session.end', async ($, e, next) => {
+    await removeFile($, await sessionFile($, e.sessionId))
     return next(e)
   })
 
@@ -76,16 +156,8 @@ export const register: Register = (on, options) => {
         ? picked[0].text
         : picked.map(r => `===== Reply ${r.number} =====\n\n${r.text}`).join('\n\n')
 
-    const isWindows = (await $.env.get('OS')) === 'Windows_NT'
-    let platform: Platform = 'windows'
-    if (!isWindows) {
-      const uname = await $.process.run(['uname', '-s'])
-      platform = uname.stdout.trim() === 'Darwin' ? 'mac' : 'linux'
-    }
-
-    const dir = (await $.env.get('TEMP')) ?? (await $.env.get('TMPDIR')) ?? '/tmp'
-    const sep = dir.includes('\\') ? '\\' : '/'
-    const path = `${dir.replace(/[\\/]+$/, '')}${sep}${FILE_NAME}`
+    const platform = await platformOf($)
+    const path = await sessionFile($, await $.session.id())
     await $.fs.write(path, body)
 
     const name = editor || DEFAULT_NAME[platform]
