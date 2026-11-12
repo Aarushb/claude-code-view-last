@@ -18,7 +18,9 @@ Replies are counted from the bottom, the same way `/copy N` counts: 1 is the lat
 - A range that runs past the oldest reply opens what exists.
 - It works while Claude is still working on a turn.
 - A short tip appears first, saying what is opening and that you can simply close it.
-- The reply is written to `claude-last-response.txt` in your temp folder (`%TEMP%` on Windows, `$TMPDIR` or `/tmp` elsewhere). It is overwritten on each use.
+- The reply is written to `claude-response-<session id>.txt` in your temp folder (`%TEMP%` on Windows, `$TMPDIR` or `/tmp` elsewhere). Each session has its own file, so sessions never overwrite each other. Within a session it is overwritten on each use.
+- The file is deleted when you send your next message and when the session ends. A window that is still open keeps its text. If a session ends without a clean exit, the next session start deletes any of these files older than a day.
+- The mod cannot tell when you close the editor window, because many editors hand the file to a copy that is already running. That is why cleanup happens on send and on session end.
 
 ## Options
 
