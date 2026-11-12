@@ -236,45 +236,42 @@ test('the order option puts the latest reply first', { options: { order: 'newest
 
 const OWN = 'C:\\Temp\\claude-response-abc.txt'
 
-test('sending a message deletes this session file', async ($, on) => {
-  const { removed } = stubEngine(on, WINDOWS, { existing: [OWN] })
-
-  await $.prompt.submit({ text: 'hello' })
-
-  expect(removed).toEqual([['cmd', '/c', 'del', '/q', OWN]])
-})
-
-test('sending a message with no file on disk deletes nothing', async ($, on) => {
-  const { removed } = stubEngine(on, WINDOWS)
-
-  await $.prompt.submit({ text: 'hello' })
-
-  expect(removed).toEqual([])
-})
-
-test('/view then sending a message leaves nothing behind', async ($, on) => {
-  const { written, removed } = stubEngine(on, WINDOWS)
+test('sending a message leaves the file alone, so an open editor keeps working', async ($, on) => {
+  const { written, removed } = stubEngine(on, WINDOWS, { existing: [OWN] })
 
   await $.command.run({ command: 'view', args: '' })
   await $.prompt.submit({ text: 'thanks' })
 
-  expect(removed).toEqual([['cmd', '/c', 'del', '/q', written[0].path]])
+  expect(written).toHaveLength(1)
+  expect(removed).toEqual([])
 })
 
-test('ending the session deletes the file of the session that ended', async ($, on) => {
-  const { removed } = stubEngine(on, WINDOWS, { id: 'new' })
+test('ending the session leaves the file alone', async ($, on) => {
+  const { removed } = stubEngine(on, WINDOWS, { existing: [OWN] })
 
-  await $.session.end({ reason: 'clear', sessionId: 'old' })
+  await $.session.end({ reason: 'exit', sessionId: 'abc' })
 
-  expect(removed).toEqual([['cmd', '/c', 'del', '/q', 'C:\\Temp\\claude-response-old.txt']])
+  expect(removed).toEqual([])
 })
 
-test('files are deleted with rm on macOS and Linux', async ($, on) => {
-  const { removed } = stubEngine(on, POSIX, { existing: ['/var/tmp/claude-response-abc.txt'] })
+test('/view again writes to the same file instead of making a new one', async ($, on) => {
+  const { written, removed } = stubEngine(on, WINDOWS)
 
-  await $.prompt.submit({ text: 'hello' })
+  await $.command.run({ command: 'view', args: '' })
+  await $.command.run({ command: 'view', args: '2' })
 
-  expect(removed).toEqual([['rm', '-f', '/var/tmp/claude-response-abc.txt']])
+  expect(written.map(w => w.path)).toEqual([OWN, OWN])
+  expect(removed).toEqual([])
+})
+
+test('the sweep deletes with rm on macOS and Linux', async ($, on) => {
+  on('command.register', () => ({ value: { command: 'view' } }))
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+  const { removed } = stubEngine(on, POSIX, { files: [entry('claude-response-old.txt', 3)] })
+
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+
+  expect(removed).toEqual([['rm', '-f', '/var/tmp/claude-response-old.txt']])
 })
 
 test('an odd session id cannot change the folder the file lands in', async ($, on) => {
