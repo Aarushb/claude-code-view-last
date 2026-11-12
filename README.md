@@ -2,7 +2,7 @@
 
 A [Claude Code](https://code.claude.com) mod that opens Claude's last response in a separate editor window with one command, so you can read, scroll and search it at your own pace and then close it.
 
-The hope is that CC adopts this natively. This repo is a 'Show, Don't Tell' prototype to make that easier for the upstream maintainers.
+The hope is that CC adopts this natively ([feature request](https://github.com/anthropics/claude-code/issues/109207)). This repo is a 'Show, Don't Tell' prototype to make that easier for the upstream maintainers.
 
 Long replies are awkward to read in the terminal, especially with a screen reader. Object navigation helps but is not enough in my experience. We already have `Ctrl+G`, but it is an input edit-and-send flow for your prompt. `/view` is the other side of that (output). So, it is read-only by intent: it writes the reply to a temp file, opens it, and gets out of the way. Closing the window sends nothing back to Claude.
 
@@ -121,7 +121,7 @@ The tests stub every engine call, so they run without a Claude session and there
 
 ## Contributing
 
-PRs are welcome. If you have a major change proposal, then please open an issue first. If you find what you see useful, then please consider starring and spreading the word so that we can meet our goal outlined in the very beginning and I can happily deprecate this repo.
+PRs are welcome. If you have a major change proposal, then please open an issue first. If you find what you see useful, then please consider starring this repo and giving a thumbs-up to the [feature request](https://github.com/anthropics/claude-code/issues/109207), and spreading the word, so that we can meet our goal outlined in the very beginning and I can happily deprecate this repo.
 
 ## License
 
