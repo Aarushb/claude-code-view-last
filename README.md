@@ -2,7 +2,7 @@
 
 A [Claude Code](https://code.claude.com) mod that opens Claude's last response in a separate editor window with one command, so you can read, scroll and search it at your own pace and then close it.
 
-The hope is to advocate having such a feature implemented natively in CC. This is merely an attempt at 'Show, Don't Tell' to make it easier for the upstream maintainers.
+The hope is that CC adopts this natively. This repo is a 'Show, Don't Tell' prototype to make that easier for the upstream maintainers.
 
 Long replies are awkward to read in the terminal, especially with a screen reader. Object navigation helps but is not enough in my experience. We already have `Ctrl+G`, but it is an input edit-and-send flow for your prompt. `/view` is the other side of that (output). So, it is read-only by intent: it writes the reply to a temp file, opens it, and gets out of the way. Closing the window sends nothing back to Claude.
 
@@ -20,9 +20,10 @@ Replies are counted from the bottom, the same way `/copy N` counts: 1 is the lat
 - A range that runs past the oldest reply opens what exists.
 - It works while Claude is still working on a turn.
 - A short tip appears first, saying what is opening and that you can simply close it.
-- Supports multiple concurrent sessions: the reply is written to `claude-response-<session id>.txt` in your temp folder (`%TEMP%` on Windows, `$TMPDIR` or `/tmp` elsewhere); again, similar to `Ctrl+G`. This prevents sessions from overwriting each other, since each session has its own file. Within a session it is overwritten on each use.
+- The reply is written to `claude-response-<session id>.txt` in your temp folder (`%TEMP%` on Windows, `$TMPDIR` or `/tmp` elsewhere), similar to `Ctrl+G`.
+- Each session has its own file, so concurrent sessions never overwrite each other. Within a session the file is overwritten on each use.
 - The file is deleted when you send your next message and when the session ends (including exiting with Alt+F4, Command+Q, etc.). If a session ends without a clean exit, the next session start deletes any of these files older than a day.
-- The mod cannot tell when you close the editor window, because many editors hand the file to a copy that is already running. That is why cleanup happens on send and on session end.
+- Cleanup happens on send and on session end because the mod cannot tell when you close the editor window: many editors hand the file to a copy that is already running.
 
 ## Options
 
@@ -118,10 +119,10 @@ claude --plugin-dir .         # load it live; saving a file reloads it
 
 The tests stub every engine call, so they run without a Claude session and therefore cost nothing. The code is one hooks module, `hooks/register.ts`.
 
-## License
-
-[MIT](LICENSE)
-
 ## Contributing
 
 PRs are welcome. If you have a major change proposal, then please open an issue first. If you find what you see useful, then please consider starring and spreading the word so that we can meet our goal outlined in the very beginning and I can happily deprecate this repo.
+
+## License
+
+[MIT](LICENSE)
