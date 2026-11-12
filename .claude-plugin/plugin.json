@@ -1,7 +1,7 @@
 {
   "name": "view-last",
   "displayName": "View Last Response",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "/view opens Claude's last response in your editor, in a separate window, so you can read it any time",
   "author": { "name": "Aarush Bhat", "url": "https://github.com/Aarushb" },
   "homepage": "https://github.com/Aarushb/claude-code-view-last#readme",

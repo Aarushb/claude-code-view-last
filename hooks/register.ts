@@ -96,8 +96,10 @@ export const register: Register = (on, options) => {
 
   // Sweeps abandoned files and adds /view to the slash commands when a session starts.
   on('session.start', async ($, e, next) => {
-    // Files from sessions that ended without a clean exit. The age limit keeps
-    // this from touching a file another open session may still be showing.
+    // The only cleanup: files are never deleted while a session runs or when it
+    // ends, because an editor with the file open reports an error when it
+    // vanishes. The age limit keeps this from touching a file another open
+    // session may still be showing.
     try {
       const dir = await tempDir($)
       for (const entry of await $.fs.list(dir)) {
@@ -118,21 +120,6 @@ export const register: Register = (on, options) => {
       argumentHint: '[N | A-B]',
       immediate: true,
     })
-    return next(e)
-  })
-
-  // Deletes this session's file when a message is sent. An editor window that
-  // is still open keeps its text, and /view writes the file again.
-  on('prompt.submit', async ($, e, next) => {
-    const path = await sessionFile($, await $.session.id())
-    if (await $.fs.exists(path)) await removeFile($, path)
-    return next(e)
-  })
-
-  // Deletes the ending session's file. The id comes from the event: after a
-  // /clear the process goes on under a new id.
-  on('session.end', async ($, e, next) => {
-    await removeFile($, await sessionFile($, e.sessionId))
     return next(e)
   })
 
