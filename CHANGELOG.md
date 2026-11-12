@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0
+
+- Each session writes its own temp file, so two sessions no longer overwrite each other.
+- The file is deleted when you send a message and when the session ends.
+- A new session deletes leftover files from earlier sessions that are more than a day old.
+
 ## 0.2.0
 
 - `/view A-B` opens a range of replies in one window, each labelled `===== Reply N =====`.
